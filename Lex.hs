@@ -11662,7 +11662,9 @@ alexRightContext IBOX(sc) user__ _ _ input__ =
         -- the first match will do.
 #endif
 {-# LINE 56 "Lex.x" #-}
--- As acoes tem tipo :: String -> Token
-
-testLex = do s <- getLine
-             print (alexScanTokens s)
+main :: IO ()
+main = do
+    putStrLn "Digite o caminho do arquivo com o código:"
+    path <- getLine
+    code <- readFile path
+    print (alexScanTokens code)

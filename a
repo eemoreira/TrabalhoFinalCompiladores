@@ -1,0 +1,35 @@
+int fun(int x, int y) {
+  double z;
+  z = x * y / 1.523;
+  return z;
+}
+double opa(string z, int x) {
+  double y;
+  int aopa;
+  if (z == "abc") {
+    y = x * 39.42;
+  } else {
+    y = x * 53.234;
+  }
+  return y;
+}
+{
+  int x, y;
+  int f, g;
+  double aferss;
+  string z;
+  z = "abc";
+  g = fun(x, y);
+  f = x * y / fun(g, x);
+  if (f > 2) {
+    f = f + 1;
+  } else {
+    while (y >= 0) {
+      f = opa(z, f * 3);
+      y = y - 1;
+    }
+  }
+  affers = (f + g / y) * 34 - x * f;
+  print(affers);
+  read(x);
+}

@@ -48,3 +48,18 @@ data Comando
   | Ret (Maybe Expr)
   | Proc Id [Expr]
   deriving Show
+
+
+concatFunction :: (Funcao, (Id, [Var], Bloco)) -> ([Funcao], [(Id, [Var], Bloco)]) -> ([Funcao], [(Id, [Var], Bloco)])
+
+concatFunction (function, (id, vars, block)) ([], []) = 
+  ([function], [(id, vars, block)])
+
+concatFunction (function, (id, vars, block)) (ansF, ansL) = 
+  (function : ansF, (id, vars, block) : ansL)
+
+  
+createFunction :: Tipo -> Id -> [Var] -> [Var] -> Bloco -> (Funcao, (Id, [Var], Bloco))
+createFunction tipo id parameterVars blockVars blockcommands =
+  (fun, (id, parameterVars ++ blockVars, blockcommands))
+    where fun = id :->: (parameterVars, tipo)

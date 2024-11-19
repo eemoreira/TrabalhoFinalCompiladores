@@ -50,18 +50,25 @@ import qualified Lex as L
 
 %%
 
-Programa : FunctionList MainBlock               {AST.Prog $1 [] $2 []}
-         | MainBlock                            {AST.Prog [] [] $1 []}
+Programa : FunctionList MainBlock               {let (decls, cmds) = $2 in
+                                                let (headers, funs) = $1 in
+                                                AST.Prog headers funs decls cmds}
+         | MainBlock                            {let (decls, cmds) = $1 in
+                                                AST.Prog [] [] decls cmds}
 
-FunctionList : Function FunctionList            {$1 : $2}
-             | Function                         {[$1]}
+FunctionList : Function FunctionList            {AST.concatFunction $1 $2}
+             | Function                         {AST.concatFunction $1 ([], [])}
 
-MainBlock: LBRACE DeclarationList CommandList RBRACE {($2 ++ $3)}
-         | LBRACE CommandList RBRACE                 {$2}
-         | LBRACE DeclarationList RBRACE             {$2}
+MainBlock: LBRACE DeclarationList CommandList RBRACE {($2, $3)}
+         | LBRACE CommandList RBRACE                 {([], $2)}
+         | LBRACE DeclarationList RBRACE             {($2, [])}
 
-Function : Tipo Id LPAR ParameterList RPAR MainBlock {$2 AST.:->: ($4, $1)}
-         | Tipo Id LPAR RPAR MainBlock               {$2 AST.:->: ([], $1)}
+Function : Tipo Id LPAR ParameterList RPAR MainBlock {
+                                                      let (decls, cmds) = $6 in
+                                                      AST.createFunction $1 $2 $4 decls cmds}
+         | Tipo Id LPAR RPAR MainBlock               {
+                                                      let (decls, cmds) = $5 in
+                                                      AST.createFunction $1 $2 [] decls cmds}
 
 Tipo : TInt                                     {AST.TInt}
      | TDouble                                  {AST.TDouble}
@@ -73,8 +80,8 @@ ParameterList: Parameter Comma ParameterList     {$1 : $3}
 
 Parameter: Tipo Id                               {$2 AST.:#: ($1, 0)}
 
-DeclarationList: Declaration DeclarationList       {$1 : $2}
-               | Declaration                       {[$1]}
+DeclarationList: Declaration DeclarationList       {$1 ++ $2}
+               | Declaration                       {$1}
 
 Declaration: Tipo IdList EndCommand               {map (\id -> id AST.:#: ($1, 0)) $2 }
 
@@ -99,10 +106,9 @@ IfCommand: If LPAR BooleanExpr RPAR Block                      {AST.If $3 $5 []}
 
 WhileCommand: While BooleanExpr Block                {AST.While $2 $3}
 
-AssignCommand: Id Assign ArithmeticExpr              {AST.Atrib $1 $3}
-             | Id Assign CString                     {AST.Atrib $1 (AST.Lit $3)}
+AssignCommand: Id Assign Expr              {AST.Atrib $1 $3}
 
-PrintCommand: Print LPAR ArithmeticExpr RPAR         {AST.Imp $3} 
+PrintCommand: Print LPAR Expr RPAR         {AST.Imp $3} 
 
 ReadCommand: Read LPAR Id RPAR                       {AST.Leitura $3}
 
@@ -110,13 +116,11 @@ FunctionCallCommand: Id LPAR FunctionCallParameterList RPAR {AST.Proc $1 $3}
                    | Id LPAR RPAR                           {AST.Proc $1 []}
 
 
-FunctionCallParameterList: ArithmeticExpr Comma FunctionCallParameterList {$1 : $3}
+FunctionCallParameterList: Expr Comma FunctionCallParameterList           {$1 : $3}
                          | CString Comma FunctionCallParameterList        {(AST.Lit $1) : $3}
-                         | ArithmeticExpr                                 {[$1]}
-                         | CString                                        {[AST.Lit $1]}
+                         | Expr                                           {[$1]}
 
-ReturnCommand: Return ArithmeticExpr           {AST.Ret (Just $2)}
-             | Return CString                  {AST.Ret (Just (AST.Lit $2))}
+ReturnCommand: Return Expr                     {AST.Ret (Just $2)}
              | Return                          {AST.Ret Nothing}
 
 BooleanExpr : BooleanExpr And BooleanTerm      {AST.And $1 $3}
@@ -124,17 +128,17 @@ BooleanExpr : BooleanExpr And BooleanTerm      {AST.And $1 $3}
             | Not BooleanTerm                  {AST.Not $2}
             | BooleanTerm                      {$1}
             
-BooleanTerm : ArithmeticExpr Gt ArithmeticExpr                     {AST.Rel (AST.Rgt $1 $3)}
-            | ArithmeticExpr Le ArithmeticExpr                     {AST.Rel (AST.Rle $1 $3)}
-            | ArithmeticExpr Ge ArithmeticExpr                     {AST.Rel (AST.Rge $1 $3)}
-            | ArithmeticExpr Lt ArithmeticExpr                     {AST.Rel (AST.Rlt $1 $3)}
-            | ArithmeticExpr Diff ArithmeticExpr                   {AST.Rel (AST.Rdif $1 $3)} 
-            | ArithmeticExpr Eq ArithmeticExpr                     {AST.Rel (AST.Req $1 $3)} 
-            | LPAR BooleanExpr RPAR                                {$2}
+BooleanTerm : Expr Gt Expr                     {AST.Rel (AST.Rgt $1 $3)}
+            | Expr Le Expr                     {AST.Rel (AST.Rle $1 $3)}
+            | Expr Ge Expr                     {AST.Rel (AST.Rge $1 $3)}
+            | Expr Lt Expr                     {AST.Rel (AST.Rlt $1 $3)}
+            | Expr Diff Expr                   {AST.Rel (AST.Rdif $1 $3)} 
+            | Expr Eq Expr                     {AST.Rel (AST.Req $1 $3)} 
+            | LPAR BooleanExpr RPAR            {$2}
 
-ArithmeticExpr : ArithmeticExpr Add Term                           {AST.Add $1 $3}
-      | ArithmeticExpr Sub Term                                    {AST.Sub $1 $3}
-      | Term                                                       {$1}
+Expr : Expr Add Term                           {AST.Add $1 $3}
+      | Expr Sub Term                          {AST.Sub $1 $3}
+      | Term                                   {$1}
 
 Term  : Term  Mul Factor                                           {AST.Mul $1 $3}
       | Term Div Factor                                            {AST.Div $1 $3}
@@ -143,13 +147,19 @@ Term  : Term  Mul Factor                                           {AST.Mul $1 $
 Factor : CDouble                                                   {AST.Const (AST.CDouble $1)}
        | CInt                                                      {AST.Const (AST.CInt $1)}
        | Id                                                        {AST.IdVar $1}
-       | LPAR ArithmeticExpr RPAR                                  {$2}
+       | LPAR Expr RPAR                                            {$2}
+       | Id LPAR FunctionCallParameterList RPAR                    {AST.Chamada $1 $3}
+       | Id LPAR RPAR                                              {AST.Chamada $1 []}
+       | CString                                                   {AST.Lit $1}
 
 {
 parseError :: [Token] -> a
 parseError s = error ("Parse error:" ++ show s)
 
-main = do putStr ("Codigo: " ++ "\n")
-          s <- getLine
-          print (eval (L.alexScanTokens s))
+main :: IO ()
+main = do
+    putStrLn "Digite o caminho do arquivo com o código:"
+    path <- getLine
+    code <- readFile path
+    print (eval (L.alexScanTokens code))
 }

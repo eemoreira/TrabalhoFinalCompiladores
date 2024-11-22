@@ -5,7 +5,7 @@ import Token
 
 %wrapper "basic"
 
-$digit = [0-9]          -- digits
+$digit = [0-9]         -- digits
 $alpha = [a-zA-Z]
 @double = $digit+(\.$digit+)
 @int = $digit+

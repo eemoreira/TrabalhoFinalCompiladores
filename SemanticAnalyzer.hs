@@ -3,41 +3,54 @@ import AST
 import ErrorMonad
 import Parser
 
-errorM :: [Char] -> M()
-errorM s = MS("error: " ++ s ++ "\n", ())
+emitError :: Show a => String -> a -> M (Tipo, a)
+emitError msg expr = 
+  MS ("ERROR -> " ++ msg ++ " in expression:\n\t" ++ show expr ++ "\n\n", (TVoid, expr))
 
-warningM :: [Char] -> M()
-warningM s = MS("warning: " ++ s, ())
+emitWarning :: Show a => String -> (Tipo, a) -> M (Tipo, a)
+emitWarning msg expr =
+  let (t, e) = expr in
+  MS ("WARNING -> " ++ msg ++ " in expression\n\t" ++ show e ++ "\n\n", expr)
 
-verificaExpr :: Expr -> M (Tipo, Expr)
+typeCheck :: Expr -> M (Tipo, Expr)
+typeCheck (Const (CInt n))     = pure (TInt, Const (CInt n))
+typeCheck (Const (CDouble n))  = pure (TDouble, Const (CDouble n))
+typeCheck (Const (CString s))  = pure (TString, Const (CString s))
 
-verificaExpr (Const (CInt n)) = pure (TInt, Const (CInt n))
-verificaExpr (Const (CDouble d)) = pure (TDouble, Const (CDouble d))
-verificaExpr (Const (CString s)) = pure (TString, Const (CString s))
+typeCheck (IntDouble e) = do
+  (t, new_e) <- typeCheck e
+  if t == TInt 
+    then pure (TDouble, IntDouble new_e)
+    else emitError "Cannot convert non-integer to double" new_e
 
-verificaExpr (Add e1 e2) = do
-  (t1, ans1) <- verificaExpr e1
-  (t2, ans2) <- verificaExpr e2
-  if t1 == TString || t2 == TString then do
-    errorM "operacao '+' não é válida com strings" <*> pure (TString, Add ans1 ans2)
-    return (TString, astMod)
-  else if t1 == t2 then
-    return (t1, astMod)
-  else do
-    warningM "coercao de tipo: int para double"
-    -- Realiza a coerção para TDouble
-    let coercedE1 = if t1 == TInt then IntDouble ast1 else ast1
-    let coercedE2 = if t2 == TInt then IntDouble ast2 else ast2
-    return (TDouble, Add coercedE1 coercedE2)
+typeCheck (DoubleInt e) = do
+  (t, new_e) <- typeCheck e
+  if t == TDouble 
+    then pure (TInt, DoubleInt new_e)
+    else emitError "Cannot convert non-double to integer" new_e
 
-test :: IO()
-test = do
-  let expr1 = Add (Const (CDouble 3.0)) (Add (Const (CInt 1)) (Const (CDouble 2.0)))
-  let expr2 = Add (Const (CString "a")) (Const (CString "b"))
-  -- let expr3 = Mul (Const (CInt 3)) (Const (CInt 4))
-  print $ verificaExpr expr1  -- Esperado: Warning + AST modificada
-  print $ verificaExpr expr2  -- Esperado: Erro
-  -- print $ verificaExpr expr3  -- Esperado: AST sem modificações
+typeCheck (Add e1 e2) = checkExpr e1 e2 Add
+typeCheck (Sub e1 e2) = checkExpr e1 e2 Sub
+typeCheck (Mul e1 e2) = checkExpr e1 e2 Mul
+typeCheck (Div e1 e2) = checkExpr e1 e2 Div
+typeCheck expr = emitError "Type checking not implemented for this expression" expr
 
+checkExpr :: Expr -> Expr -> (Expr -> Expr -> Expr) -> M (Tipo, Expr)
+checkExpr e1 e2 operation = do
+  (t1, new_e1) <- typeCheck e1
+  (t2, new_e2) <- typeCheck e2
+  let op = operation new_e1 new_e2
+  case (t1, t2) of
+    (TString, _) -> emitError ("Cannot operate string with " ++ show t2) op
+    (_, TString) -> emitError ("Cannot operate " ++ show t1 ++ " with string") op
+    (TInt, TInt) -> pure (TInt, op)
+    (TDouble, TDouble) -> pure (TDouble, op)
+    (TInt, TDouble) -> emitWarning "Coercing int to double" (TDouble, operation (IntDouble new_e1) new_e2)
+    (TDouble, TInt) -> emitWarning "Coercing int to double" (TDouble, operation new_e1 (IntDouble new_e2))
+    _ -> emitError "Unsupported types for this operation" op
 
+semantics :: IO ()
+semantics = do
+  let expr1 = Mul (Const (CString "Opa")) (Div (Const (CInt 5)) (Const (CDouble 10.5)))
+  writeFile "out" (formatM $ typeCheck expr1) -- Deve gerar um warning sobre coerção
 

@@ -17,3 +17,7 @@ instance Monad M where
     let (s, a) = m in
     let MS(t, b) = f a in
     MS(s ++ t, b)
+
+formatM :: Show a => M a -> String
+formatM (MS (s, a)) = "Messages:\n" ++ s ++ "\nResult: " ++ show a
+

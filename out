@@ -1,0 +1,9 @@
+Messages:
+WARNING -> Coercing int to double in expression
+	Div (IntDouble (Const (CInt 5))) (Const (CDouble 10.5))
+
+ERROR -> Cannot operate string with TDouble in expression:
+	Mul (Const (CString "Opa")) (Div (IntDouble (Const (CInt 5))) (Const (CDouble 10.5)))
+
+
+Result: (TVoid,Mul (Const (CString "Opa")) (Div (IntDouble (Const (CInt 5))) (Const (CDouble 10.5))))

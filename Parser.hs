@@ -960,12 +960,14 @@ happySeq = happyDontSeq
 parseError :: [Token] -> a
 parseError s = error ("Parse error:" ++ show s)
 
+makeAST code = do eval (L.alexScanTokens code)
+
 main :: IO ()
 main = do
     putStrLn "Digite o caminho do arquivo com o código:"
     path <- getLine
     code <- readFile path
-    print (eval (L.alexScanTokens code))
+    print (makeAST code)
 -- $Id: GenericTemplate.hs,v 1.26 2005/01/14 14:47:22 simonmar Exp $
 
 #if !defined(__GLASGOW_HASKELL__)

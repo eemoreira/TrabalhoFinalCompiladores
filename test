@@ -25,7 +25,7 @@ double opa(string z, int x) {
     f = f + 1;
   } else {
     while (y >= 0) {
-      f = opa(z, f * 3)e
+      f = opa(z, f * 3);
       y = y - 1;
     }
   }

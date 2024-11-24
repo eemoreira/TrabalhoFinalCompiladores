@@ -156,10 +156,12 @@ Factor : CDouble                                                   {AST.Const (A
 parseError :: [Token] -> a
 parseError s = error ("Parse error:" ++ show s)
 
+makeAST code = do eval (L.alexScanTokens code)
+
 main :: IO ()
 main = do
     putStrLn "Digite o caminho do arquivo com o código:"
     path <- getLine
     code <- readFile path
-    print (eval (L.alexScanTokens code))
+    print (makeAST code)
 }

@@ -9,7 +9,7 @@ instance Applicative M where
   pure :: a -> M a
   pure a = MS("", a)
   (<*>) :: M (a -> b) -> M a -> M b
-  MS(s, f) <*> MS(t, x) = MS(s ++ ", " ++ t, f x)
+  MS(s, f) <*> MS(t, x) = MS(s ++ t, f x)
 
 instance Monad M where
   (>>=) :: M a -> (a -> M b) -> M b
@@ -17,7 +17,4 @@ instance Monad M where
     let (s, a) = m in
     let MS(t, b) = f a in
     MS(s ++ t, b)
-
-formatM :: Show a => M a -> String
-formatM (MS (s, a)) = "Messages:\n" ++ s ++ "\nResult: " ++ show a
 

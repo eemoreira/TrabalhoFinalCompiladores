@@ -138,6 +138,7 @@ BooleanTerm : Expr Gt Expr                     {AST.Rel (AST.Rgt $1 $3)}
 
 Expr : Expr Add Term                           {AST.Add $1 $3}
       | Expr Sub Term                          {AST.Sub $1 $3}
+      | Sub Expr                               {AST.Neg $2}
       | Term                                   {$1}
 
 Term  : Term  Mul Factor                                           {AST.Mul $1 $3}
@@ -156,12 +157,12 @@ Factor : CDouble                                                   {AST.Const (A
 parseError :: [Token] -> a
 parseError s = error ("Parse error:" ++ show s)
 
-makeAST code = do eval (L.alexScanTokens code)
+makeAST code = eval (L.alexScanTokens code)
 
 main :: IO ()
 main = do
     putStrLn "Digite o caminho do arquivo com o código:"
     path <- getLine
     code <- readFile path
-    print (makeAST code)
+    writeFile "AST.txt" (show $ makeAST code)
 }

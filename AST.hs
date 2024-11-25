@@ -1,9 +1,9 @@
 module AST where
 type Id = String
 
-data Tipo = TDouble | TInt | TString | TVoid deriving (Show, Eq)
+data Tipo = TDouble | TInt | TString | TVoid deriving (Show, Eq, Read)
 
-data TCons = CDouble Double | CInt Int | CString String deriving (Show, Eq)
+data TCons = CDouble Double | CInt Int | CString String deriving (Show, Eq, Read)
 
 data Expr
   = Add Expr Expr
@@ -17,7 +17,7 @@ data Expr
   | Lit String
   | IntDouble Expr
   | DoubleInt Expr
-  deriving (Show)
+  deriving (Show, Read)
 
 data ExprR
   = Req Expr Expr
@@ -26,16 +26,16 @@ data ExprR
   | Rgt Expr Expr
   | Rle Expr Expr
   | Rge Expr Expr
-  deriving (Show)
+  deriving (Show, Read)
 
 data ExprL = And ExprL ExprL | Or ExprL ExprL | Not ExprL | Rel ExprR
-  deriving (Show)
+  deriving (Show, Read)
 
-data Var = Id :#: (Tipo, Int) deriving (Show)
+data Var = Id :#: (Tipo, Int) deriving (Show, Read)
 
-data Funcao = Id :->: ([Var], Tipo) deriving (Show)
+data Funcao = Id :->: ([Var], Tipo) deriving (Show, Read)
 
-data Programa = Prog [Funcao] [(Id, [Var], Bloco)] [Var] Bloco deriving (Show)
+data Programa = Prog [Funcao] [(Id, [Var], Bloco)] [Var] Bloco deriving (Show, Read)
 
 type Bloco = [Comando]
 
@@ -47,7 +47,7 @@ data Comando
   | Imp Expr
   | Ret (Maybe Expr)
   | Proc Id [Expr]
-  deriving Show
+  deriving (Show, Read)
 
 
 concatFunction :: (Funcao, (Id, [Var], Bloco)) -> ([Funcao], [(Id, [Var], Bloco)]) -> ([Funcao], [(Id, [Var], Bloco)])

@@ -17,58 +17,74 @@ emitWarning msg line =
 
 lookupVar :: Id -> [Var] -> Maybe Tipo
 lookupVar id [] = Nothing
-lookupVar id ((idd :#: (varType, _)):vs)
+lookupVar id ((idd :#: (varType, _)) : xs)
   | id == idd = Just varType
-  | otherwise = lookupVar id vs
+  | otherwise = lookupVar id xs
 
-exprTypeCheck :: [Var] -> Expr -> M (Tipo, Expr)
-exprTypeCheck _ (Const (CInt n))     = pure (TInt, Const (CInt n))
-exprTypeCheck _ (Const (CDouble n))  = pure (TDouble, Const (CDouble n))
-exprTypeCheck _ (Lit s)  = pure (TString, Lit s)
+lookupFunction :: Id -> [Funcao] -> Maybe Funcao
+lookupFunction id [] = Nothing
+lookupFunction id (fun@(idd :->: (_, _)) : xs)
+  | id == idd = Just fun
+  | otherwise = lookupFunction id xs
 
-exprTypeCheck vars (IdVar id) = 
+exprTypeCheck :: [Funcao] -> [Var] -> Expr -> M (Tipo, Expr)
+exprTypeCheck functionList _ (Const (CInt n))     = pure (TInt, Const (CInt n))
+exprTypeCheck functionList _ (Const (CDouble n))  = pure (TDouble, Const (CDouble n))
+exprTypeCheck functionList _ (Lit s)  = pure (TString, Lit s)
+
+exprTypeCheck functionList vars (IdVar id) = 
   case lookupVar id vars of
     Just varType -> pure(varType, IdVar id)
     Nothing -> do 
-      emitError ("varible " ++ show id ++ " not declared") (IdVar id)
+      emitError ("variable " ++ show id ++ " not declared") (IdVar id)
       return (TVoid, IdVar id)
 
-exprTypeCheck vars (Neg e)  = do
-  (t, new_e) <- exprTypeCheck vars e
+exprTypeCheck functionList vars (Neg e)  = do
+  (t, new_e) <- exprTypeCheck functionList vars e
   if (t == TString)
     then do
       emitError "Cannot make a string negative" e
       return (TVoid, e)
   else pure(t, new_e)
 
-exprTypeCheck vars (IntDouble e) = do
-  (t, new_e) <- exprTypeCheck vars e
+exprTypeCheck functionList vars (IntDouble e) = do
+  (t, new_e) <- exprTypeCheck functionList vars e
   if t == TInt 
     then pure (TDouble, IntDouble new_e)
     else do
       emitError "Cannot convert non-integer to double" e
       return (t, new_e)
 
-exprTypeCheck vars (DoubleInt e) = do
-  (t, new_e) <- exprTypeCheck vars e
+exprTypeCheck functionList vars (DoubleInt e) = do
+  (t, new_e) <- exprTypeCheck functionList vars e
   if t == TDouble 
     then pure (TInt, DoubleInt new_e)
     else do
       emitError "Cannot convert non-double to integer" e
       return (t, new_e)
 
-exprTypeCheck vars (Add e1 e2) = checkExpr vars e1 e2 Add
-exprTypeCheck vars (Sub e1 e2) = checkExpr vars e1 e2 Sub
-exprTypeCheck vars (Mul e1 e2) = checkExpr vars e1 e2 Mul
-exprTypeCheck vars (Div e1 e2) = checkExpr vars e1 e2 Div
-exprTypeCheck _ expr = do 
+exprTypeCheck functionList vars (Add e1 e2) = checkExpr functionList vars e1 e2 Add
+exprTypeCheck functionList vars (Sub e1 e2) = checkExpr functionList vars e1 e2 Sub
+exprTypeCheck functionList vars (Mul e1 e2) = checkExpr functionList vars e1 e2 Mul
+exprTypeCheck functionList vars (Div e1 e2) = checkExpr functionList vars e1 e2 Div
+exprTypeCheck functionList vars (Chamada id exprList) = 
+  case lookupFunction id functionList of
+    Just function -> do
+      let (_ :->: (_, returnType)) = function
+      new_exprList <- checkFunctionCall functionList vars function function exprList
+      return (returnType, Chamada id new_exprList)
+    Nothing -> do
+      emitError ("Function" ++ show id ++ " is not declared") (Chamada id exprList)
+      return (TVoid, Chamada id exprList)
+
+exprTypeCheck _ _ expr = do 
   emitError "Type checking not implemented for this expression" expr
   return (TVoid, expr)
 
-checkExpr :: [Var] -> Expr -> Expr -> (Expr -> Expr -> Expr) -> M (Tipo, Expr)
-checkExpr vars e1 e2 operation = do
-  (t1, new_e1) <- exprTypeCheck vars e1
-  (t2, new_e2) <- exprTypeCheck vars e2
+checkExpr :: [Funcao] -> [Var] -> Expr -> Expr -> (Expr -> Expr -> Expr) -> M (Tipo, Expr)
+checkExpr functionList vars e1 e2 operation = do
+  (t1, new_e1) <- exprTypeCheck functionList vars e1
+  (t2, new_e2) <- exprTypeCheck functionList vars e2
   let op = operation e1 e2
   let new_op = operation new_e1 new_e2
   case (t1, t2) of
@@ -90,18 +106,18 @@ checkExpr vars e1 e2 operation = do
       emitError "Unsupported types to operate" op
       return (TVoid, new_op)
 
-exprRTypeCheck :: [Var] -> ExprR -> M ExprR
-exprRTypeCheck vars (Req e1 e2) = checkExprR vars e1 e2 Req
-exprRTypeCheck vars (Rdif e1 e2) = checkExprR vars e1 e2 Rdif
-exprRTypeCheck vars (Rlt e1 e2) = checkExprR vars e1 e2 Rlt
-exprRTypeCheck vars (Rgt e1 e2) = checkExprR vars e1 e2 Rgt
-exprRTypeCheck vars (Rle e1 e2) = checkExprR vars e1 e2 Rle
-exprRTypeCheck vars (Rge e1 e2) = checkExprR vars e1 e2 Rge
+exprRTypeCheck :: [Funcao] -> [Var] -> ExprR -> M ExprR
+exprRTypeCheck functionList vars (Req e1 e2)  = checkExprR functionList vars e1 e2 Req
+exprRTypeCheck functionList vars (Rdif e1 e2) = checkExprR functionList vars e1 e2 Rdif
+exprRTypeCheck functionList vars (Rlt e1 e2)  = checkExprR functionList vars e1 e2 Rlt
+exprRTypeCheck functionList vars (Rgt e1 e2)  = checkExprR functionList vars e1 e2 Rgt
+exprRTypeCheck functionList vars (Rle e1 e2)  = checkExprR functionList vars e1 e2 Rle
+exprRTypeCheck functionList vars (Rge e1 e2)  = checkExprR functionList vars e1 e2 Rge
 
-checkExprR :: [Var] -> Expr -> Expr -> (Expr -> Expr -> ExprR) -> M ExprR
-checkExprR vars e1 e2 operation = do
-  (t1, new_e1) <- exprTypeCheck vars e1
-  (t2, new_e2) <- exprTypeCheck vars e2
+checkExprR :: [Funcao] -> [Var] -> Expr -> Expr -> (Expr -> Expr -> ExprR) -> M ExprR
+checkExprR functionList vars e1 e2 operation = do
+  (t1, new_e1) <- exprTypeCheck functionList vars e1
+  (t2, new_e2) <- exprTypeCheck functionList vars e2
   let op = operation e1 e2
   let new_op = operation new_e1 new_e2
   case (t1, t2) of
@@ -124,47 +140,47 @@ checkExprR vars e1 e2 operation = do
       emitError "Unsupported types to compare" op
       return new_op
   
-exprLTypeCheck :: [Var] -> ExprL -> M ExprL
-exprLTypeCheck vars (And e1 e2) = checkExprL vars e1 e2 And
-exprLTypeCheck vars (Or e1 e2)  = checkExprL vars e1 e2 Or
-exprLTypeCheck vars (Not e1)    = exprLTypeCheck vars e1
-exprLTypeCheck vars (Rel e1)    = pure Rel <*> exprRTypeCheck vars e1
+exprLTypeCheck :: [Funcao] -> [Var] -> ExprL -> M ExprL
+exprLTypeCheck functionList vars (And e1 e2) = checkExprL functionList vars e1 e2 And
+exprLTypeCheck functionList vars (Or e1 e2)  = checkExprL functionList vars e1 e2 Or
+exprLTypeCheck functionList vars (Not e1)    = exprLTypeCheck functionList vars e1
+exprLTypeCheck functionList vars (Rel e1)    = pure Rel <*> exprRTypeCheck functionList vars e1
 
-checkExprL :: [Var] -> ExprL -> ExprL -> (ExprL -> ExprL -> b) -> M b
-checkExprL vars e1 e2 operation = do
-  new_e1 <- exprLTypeCheck vars e1
-  new_e2 <- exprLTypeCheck vars e2
+checkExprL :: [Funcao] -> [Var] -> ExprL -> ExprL -> (ExprL -> ExprL -> b) -> M b
+checkExprL functionList vars e1 e2 operation = do
+  new_e1 <- exprLTypeCheck functionList vars e1
+  new_e2 <- exprLTypeCheck functionList vars e2
   let new_op = operation new_e1 new_e2
   pure new_op
 
-checkBlock :: Maybe Funcao -> [Var] -> Bloco -> M Bloco
-checkBlock function vars (cmd : block) = do
-  new_cmd <- checkCommand function vars cmd
-  new_block <- checkBlock function vars block
+checkBlock :: [Funcao] -> Maybe Funcao -> [Var] -> Bloco -> M Bloco
+checkBlock functionList function vars (cmd : block) = do
+  new_cmd <- checkCommand functionList function vars cmd
+  new_block <- checkBlock functionList function vars block
   pure (new_cmd : new_block)
 
-checkBlock function vars [] = pure []
+checkBlock _ function vars [] = pure []
 
-checkCommand :: Maybe Funcao -> [Var] -> Comando -> M Comando
+checkCommand :: [Funcao] -> Maybe Funcao -> [Var] -> Comando -> M Comando
 
-checkCommand function vars (If exprL b1 b2) = do
-  new_e <- exprLTypeCheck vars exprL
-  new_b1 <- checkBlock function vars b1
-  new_b2 <- checkBlock function vars b2
+checkCommand functionList function vars (If exprL b1 b2) = do
+  new_e <- exprLTypeCheck functionList vars exprL
+  new_b1 <- checkBlock functionList function vars b1
+  new_b2 <- checkBlock functionList function vars b2
   pure(If new_e new_b1 new_b2)
 
-checkCommand function vars (While exprL b) = do
-  new_e <- exprLTypeCheck vars exprL
-  new_b <- checkBlock function vars b
+checkCommand functionList function vars (While exprL b) = do
+  new_e <- exprLTypeCheck functionList vars exprL
+  new_b <- checkBlock functionList function vars b
   pure(While new_e new_b)
 
-checkCommand _ vars (Imp expr) = do
-  (_, new_e) <- exprTypeCheck vars expr
+checkCommand functionList _ vars (Imp expr) = do
+  (_, new_e) <- exprTypeCheck functionList vars expr
   pure(Imp new_e)
 
 
-checkCommand _ vars (Atrib var expr) = do
-  (eType, new_expr) <- exprTypeCheck vars expr
+checkCommand functionList _ vars (Atrib var expr) = do
+  (eType, new_expr) <- exprTypeCheck functionList vars expr
   let cmd = Atrib var expr
   let new_cmd = Atrib var new_expr
   case lookupVar var vars of
@@ -189,25 +205,25 @@ checkCommand _ vars (Atrib var expr) = do
           emitError "Unsuported types to assign" cmd
           return new_cmd
     Nothing -> do
-      emitError ("varible " ++ show var ++ " not declared") new_cmd
+      emitError ("Variable " ++ show var ++ " not declared") new_cmd
       return cmd
 
-checkCommand _ vars (Leitura var) = do
+checkCommand _ _ vars (Leitura var) = do
   let cmd = Leitura var
   case lookupVar var vars of
     Just varType -> pure cmd
     Nothing -> do
-      emitError ("varible " ++ show var ++ " not declared") cmd
+      emitError ("Variable " ++ show var ++ " not declared") cmd
       return cmd
 
-checkCommand function vars (Ret maybeExpr) = do
+checkCommand functionList function vars (Ret maybeExpr) = do
   let returnType = case function of
         Just (id :->: (_, retType)) -> retType
         Nothing -> TVoid
   let cmd = Ret maybeExpr
   case maybeExpr of
     Just e -> do
-      (eType, new_e) <- exprTypeCheck vars e
+      (eType, new_e) <- exprTypeCheck functionList vars e
       case (eType, returnType) of
         (TString, TString) -> pure (Ret (Just new_e))
         (TString, _) -> do
@@ -234,24 +250,73 @@ checkCommand function vars (Ret maybeExpr) = do
           emitError "Non-void function expects a return expression" cmd
           pure cmd
 
-checkFunction :: Funcao -> (Id, [Var], Bloco) -> M (Funcao, (Id, [Var], Bloco))
-checkFunction function (id, vars, block) = do
-  new_block <- checkBlock (Just function) vars block
+checkCommand functionList function vars (Proc id exprList) =
+  case lookupFunction id functionList of
+    Just fun -> do
+      new_exprList <- checkFunctionCall functionList vars fun fun exprList
+      return (Proc id new_exprList)
+    Nothing -> do
+      emitError ("Function " ++ show id ++ "not declared") (Proc id exprList)
+      return (Proc id exprList)
+
+checkFunctionCall :: [Funcao] -> [Var] -> Funcao -> Funcao -> [Expr] -> M [Expr]
+
+checkFunctionCall functionList vars originalFunction (_ :->: ([], _)) [] = pure []
+
+checkFunctionCall functionList vars originalFunction function exprList = do
+  let (funId :->: (functionVarList, returnType)) = function
+  if length functionVarList < length exprList 
+    then do
+      emitError ("Too many arguments (" ++ show exprList ++ ") on functionCall") originalFunction
+      return exprList
+  else if length functionVarList > length exprList
+    then do
+      emitError ("Too few arguments (" ++ show exprList ++ ") on functionCall") originalFunction
+      return exprList
+  else do
+    let (functionVar : rest) = functionVarList
+    let (id :#: (varType, _mem)) = functionVar
+    let (expr : exprTail) = exprList
+    let nxtFunction = funId :->: (rest, returnType)
+    (eType, new_expr) <- exprTypeCheck functionList vars expr
+    newTail <- checkFunctionCall functionList vars originalFunction nxtFunction exprTail
+    case (varType, eType) of
+      (TString, TString) -> pure (new_expr : newTail)
+      (TString, _) -> do
+        emitError ("Cannot coerce" ++ show eType ++ "to string") originalFunction
+        return (new_expr : newTail)
+      (_, TString) -> do
+        emitError ("Cannot coerce string to " ++ show eType) originalFunction
+        return (new_expr : newTail)
+      (TInt, TInt) -> pure (new_expr : newTail)
+      (TDouble, TDouble) -> pure (new_expr : newTail)
+      (TInt, TDouble) -> do
+        emitWarning "Coercing double to int" originalFunction
+        return (DoubleInt new_expr : newTail)
+      (TDouble, TInt) -> do
+        emitWarning "Coercing int to double" originalFunction
+        return (IntDouble new_expr : newTail)
+      _ -> do
+        emitError "Unsuported types on functionCall" originalFunction
+        return (new_expr : newTail)
+
+checkFunction :: [Funcao] -> Funcao -> (Id, [Var], Bloco) -> M (Funcao, (Id, [Var], Bloco))
+checkFunction functionList function (id, vars, block) = do
+  new_block <- checkBlock functionList (Just function) vars block
   pure (function, (id, vars, new_block))
 
-checkFunctionList :: [Funcao] -> [(Id, [Var], Bloco)] -> M ([Funcao], [(Id, [Var], Bloco)])
-checkFunctionList [] [] = pure ([], [])
-checkFunctionList (function : functionTail) ((id, vars, block) : rest) = do
-  (new_function, new_functionBody) <- checkFunction function (id, vars, block)
-  (tail_functionList, tail_functionBodyList) <- checkFunctionList functionTail rest
+checkFunctionList :: [Funcao] -> [Funcao] -> [(Id, [Var], Bloco)] -> M ([Funcao], [(Id, [Var], Bloco)])
+checkFunctionList _ [] [] = pure ([], [])
+checkFunctionList functionList (function : functionTail) ((id, vars, block) : rest) = do
+  (new_function, new_functionBody) <- checkFunction functionList function (id, vars, block)
+  (tail_functionList, tail_functionBodyList) <- checkFunctionList functionList functionTail rest
   pure (new_function : tail_functionList, new_functionBody : tail_functionBodyList)
 
 checkProgram :: Programa -> M Programa
 checkProgram (Prog functionList functionBodyList mainBlockVars mainBlock) = do
-  (new_functionList, new_functionBodyList) <- checkFunctionList functionList functionBodyList
-  new_mainBlock <- checkBlock Nothing mainBlockVars mainBlock
+  (new_functionList, new_functionBodyList) <- checkFunctionList functionList functionList functionBodyList
+  new_mainBlock <- checkBlock functionList Nothing mainBlockVars mainBlock
   pure (Prog new_functionList new_functionBodyList mainBlockVars new_mainBlock)
-  
 
 semantics :: IO ()
 semantics = do

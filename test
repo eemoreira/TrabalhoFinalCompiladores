@@ -16,15 +16,14 @@ double opa(string z, int x) {
 {
   int x, y;
   int f, g;
-  double aferss;
+  double affers;
   string z;
   z = "abc";
-  g = fun(x, y);
   f = x * y / fun(g, x);
   if (f > 2) {
     f = f + 1;
   } else {
-    while (y >= 0) {
+    while (y >= 0.1) {
       f = opa(z, f * 3);
       y = y - 1;
     }
@@ -32,4 +31,5 @@ double opa(string z, int x) {
   affers = (f + g / y) * 34 - x * f;
   print(affers);
   read(x);
+  g = fun(x, y) * affers;
 }

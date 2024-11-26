@@ -13,10 +13,12 @@ double opa(string z, int x) {
   }
   return y;
 }
+int opa(int y) {
+  return y * 2;
+}
 {
-  int x, y;
-  int f, g;
-  double affers;
+  int x, y, x, f, g;
+  double affers, f;
   string z;
   z = "abc";
   f = x * y / fun(g, x);

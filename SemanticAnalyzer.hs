@@ -2,6 +2,7 @@ module SemanticAnalyzer where
 import AST
 import ErrorMonad
 import Parser
+import GHC.Exts.Heap (GenClosure(fun))
 
 
 formatM :: Show a => M a -> String
@@ -9,11 +10,11 @@ formatM (MS (s, a)) = "Messages:\n" ++ s ++ "\nAST: " ++ show a
 
 emitError :: Show a => String -> a -> M ()
 emitError msg line = 
-  MS ("ERROR -> " ++ msg ++ " in expression:\n\t" ++ show line ++ "\n\n", ())
+  MS ("ERROR -> " ++ msg ++ " in:\n\t" ++ show line ++ "\n\n", ())
 
 emitWarning :: Show a => String -> a -> M ()
 emitWarning msg line =
-  MS ("WARNING -> " ++ msg ++ " in expression\n\t" ++ show line++ "\n\n", ())
+  MS ("WARNING -> " ++ msg ++ " in:\n\t" ++ show line++ "\n\n", ())
 
 lookupVar :: Id -> [Var] -> Maybe Tipo
 lookupVar id [] = Nothing
@@ -152,6 +153,18 @@ checkExprL functionList vars e1 e2 operation = do
   new_e2 <- exprLTypeCheck functionList vars e2
   let new_op = operation new_e1 new_e2
   pure new_op
+
+checkBlockVars :: [Var] -> [Var] -> M [Var]
+checkBlockVars [] _ = pure []
+checkBlockVars (var : xs) varList = do
+  tail <- checkBlockVars xs varList
+  if varFreq var varList > 1
+    then do
+      emitError ("Variable " ++ show var ++ " declared multiple times") varList
+      pure (var : tail)
+  else
+    pure (var : tail)
+
 
 checkBlock :: [Funcao] -> Maybe Funcao -> [Var] -> Bloco -> M Bloco
 checkBlock functionList function vars (cmd : block) = do
@@ -300,20 +313,39 @@ checkFunctionCall functionList vars originalFunction function exprList = do
         emitError "Unsuported types on functionCall" originalFunction
         return (new_expr : newTail)
 
+functionFreq :: Funcao -> [Funcao] -> Int
+functionFreq function [] = 0
+functionFreq function@(id :->: (_, _)) ((id2 :->: (_, _)) : xs) 
+  | id == id2 = 1 + functionFreq function xs
+  | otherwise = functionFreq function xs
+
+varFreq :: Var -> [Var] -> Int
+varFreq var [] = 0
+varFreq var@(id :#: (_, _)) ((id2 :#: (_, _)) : xs) 
+  | id == id2 = 1 + varFreq var xs
+  | otherwise = varFreq var xs
+
 checkFunction :: [Funcao] -> Funcao -> (Id, [Var], Bloco) -> M (Funcao, (Id, [Var], Bloco))
 checkFunction functionList function (id, vars, block) = do
   new_block <- checkBlock functionList (Just function) vars block
-  pure (function, (id, vars, new_block))
+  if functionFreq function functionList > 1
+    then do
+      emitError ("Function " ++ show function ++ " declared multiple times") functionList
+      pure (function, (id, vars, new_block))
+  else 
+      pure (function, (id, vars, new_block))
 
 checkFunctionList :: [Funcao] -> [Funcao] -> [(Id, [Var], Bloco)] -> M ([Funcao], [(Id, [Var], Bloco)])
 checkFunctionList _ [] [] = pure ([], [])
 checkFunctionList functionList (function : functionTail) ((id, vars, block) : rest) = do
-  (new_function, new_functionBody) <- checkFunction functionList function (id, vars, block)
+  newVars <- checkBlockVars vars vars
+  (new_function, new_functionBody) <- checkFunction functionList function (id, newVars, block)
   (tail_functionList, tail_functionBodyList) <- checkFunctionList functionList functionTail rest
   pure (new_function : tail_functionList, new_functionBody : tail_functionBodyList)
 
 checkProgram :: Programa -> M Programa
 checkProgram (Prog functionList functionBodyList mainBlockVars mainBlock) = do
+  newMainBlockVars <- checkBlockVars mainBlockVars mainBlockVars
   (new_functionList, new_functionBodyList) <- checkFunctionList functionList functionList functionBodyList
   new_mainBlock <- checkBlock functionList Nothing mainBlockVars mainBlock
   pure (Prog new_functionList new_functionBodyList mainBlockVars new_mainBlock)

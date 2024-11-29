@@ -13,12 +13,12 @@ double opa(string z, int x) {
   }
   return y;
 }
-int opa(int y) {
-  return y * 2;
+void eita(int x, double y) {
+    print(x * 2 / y);
 }
 {
-  int x, y, x, f, g;
-  double affers, f;
+  int y, x, f, g;
+  double affers, r;
   string z;
   z = "abc";
   f = x * y / fun(g, x);
@@ -34,4 +34,5 @@ int opa(int y) {
   print(affers);
   read(x);
   g = fun(x, y) * affers;
+  print(z);
 }

@@ -335,6 +335,7 @@ checkFunction functionList function (id, vars, block) = do
   else 
       pure (function, (id, vars, new_block))
 
+
 checkFunctionList :: [Funcao] -> [Funcao] -> [(Id, [Var], Bloco)] -> M ([Funcao], [(Id, [Var], Bloco)])
 checkFunctionList _ [] [] = pure ([], [])
 checkFunctionList functionList (function : functionTail) ((id, vars, block) : rest) = do

@@ -1,48 +1,30 @@
 Messages:
-ERROR -> Variable "f" :#: (TDouble,0) declared multiple times in:
-	["x" :#: (TInt,0),"y" :#: (TInt,0),"x" :#: (TInt,0),"f" :#: (TInt,0),"g" :#: (TInt,0),"affers" :#: (TDouble,0),"f" :#: (TDouble,0),"z" :#: (TString,0)]
-
-ERROR -> Variable "f" :#: (TInt,0) declared multiple times in:
-	["x" :#: (TInt,0),"y" :#: (TInt,0),"x" :#: (TInt,0),"f" :#: (TInt,0),"g" :#: (TInt,0),"affers" :#: (TDouble,0),"f" :#: (TDouble,0),"z" :#: (TString,0)]
-
-ERROR -> Variable "x" :#: (TInt,0) declared multiple times in:
-	["x" :#: (TInt,0),"y" :#: (TInt,0),"x" :#: (TInt,0),"f" :#: (TInt,0),"g" :#: (TInt,0),"affers" :#: (TDouble,0),"f" :#: (TDouble,0),"z" :#: (TString,0)]
-
-ERROR -> Variable "x" :#: (TInt,0) declared multiple times in:
-	["x" :#: (TInt,0),"y" :#: (TInt,0),"x" :#: (TInt,0),"f" :#: (TInt,0),"g" :#: (TInt,0),"affers" :#: (TDouble,0),"f" :#: (TDouble,0),"z" :#: (TString,0)]
-
-WARNING -> Coercing int to double in:
-	Div (Mul (IdVar "x") (IdVar "y")) (Const (CDouble 1.523))
-
-WARNING -> Coercing int to double in:
-	Ret (Just (IdVar "z"))
-
-WARNING -> Coercing int to double in:
-	Mul (IdVar "x") (Const (CDouble 39.42))
-
-WARNING -> Coercing int to double in:
-	Mul (IdVar "x") (Const (CDouble 53.234))
-
-ERROR -> Function "opa" :->: (["z" :#: (TString,0),"x" :#: (TInt,0)],TDouble) declared multiple times in:
-	["fun" :->: (["x" :#: (TInt,0),"y" :#: (TInt,0)],TInt),"opa" :->: (["z" :#: (TString,0),"x" :#: (TInt,0)],TDouble),"opa" :->: (["y" :#: (TInt,0)],TInt)]
-
-ERROR -> Function "opa" :->: (["y" :#: (TInt,0)],TInt) declared multiple times in:
-	["fun" :->: (["x" :#: (TInt,0),"y" :#: (TInt,0)],TInt),"opa" :->: (["z" :#: (TString,0),"x" :#: (TInt,0)],TDouble),"opa" :->: (["y" :#: (TInt,0)],TInt)]
-
-WARNING -> Coercing int to double in:
-	Rge (IdVar "y") (Const (CDouble 0.1))
+WARNING -> Coercing double to int in:
+	Atrib "m" (IdVar "a")
 
 WARNING -> Coercing double to int in:
-	Atrib "f" (Chamada "opa" [IdVar "z",Mul (IdVar "f") (Const (CInt 3))])
-
-WARNING -> Coercing int to double in:
-	Atrib "affers" (Sub (Mul (Add (IdVar "f") (Div (IdVar "g") (IdVar "y"))) (Const (CInt 34))) (Mul (IdVar "x") (IdVar "f")))
-
-WARNING -> Coercing int to double in:
-	Mul (Chamada "fun" [IdVar "x",IdVar "y"]) (IdVar "affers")
+	Atrib "m" (IdVar "b")
 
 WARNING -> Coercing double to int in:
-	Atrib "g" (Mul (Chamada "fun" [IdVar "x",IdVar "y"]) (IdVar "affers"))
+	Ret (Just (IdVar "m"))
+
+WARNING -> Coercing int to double in:
+	Atrib "s" (Const (CInt 0))
+
+WARNING -> Coercing int to double in:
+	Add (IdVar "s") (IdVar "i")
+
+WARNING -> Coercing int to double in:
+	Ret (Just (IdVar "s"))
+
+ERROR -> Variable "s" :#: (TInt,0) declared multiple times in:
+	["s" :#: (TString,0),"r" :#: (TDouble,0),"s" :#: (TInt,0)]
+
+ERROR -> Variable "s" :#: (TString,0) declared multiple times in:
+	["s" :#: (TString,0),"r" :#: (TDouble,0),"s" :#: (TInt,0)]
+
+ERROR -> Unsuported types to assign in:
+	Ret (Just (Const (CInt 0)))
 
 
-AST: Prog ["fun" :->: (["x" :#: (TInt,0),"y" :#: (TInt,0)],TInt),"opa" :->: (["z" :#: (TString,0),"x" :#: (TInt,0)],TDouble),"opa" :->: (["y" :#: (TInt,0)],TInt)] [("fun",["x" :#: (TInt,0),"y" :#: (TInt,0),"z" :#: (TDouble,0)],[Atrib "z" (Div (IntDouble (Mul (IdVar "x") (IdVar "y"))) (Const (CDouble 1.523))),Ret (Just (IntDouble (IdVar "z")))]),("opa",["z" :#: (TString,0),"x" :#: (TInt,0),"y" :#: (TDouble,0),"aopa" :#: (TInt,0)],[If (Rel (Req (IdVar "z") (Lit "abc"))) [Atrib "y" (Mul (IntDouble (IdVar "x")) (Const (CDouble 39.42)))] [Atrib "y" (Mul (IntDouble (IdVar "x")) (Const (CDouble 53.234)))],Ret (Just (IdVar "y"))]),("opa",["y" :#: (TInt,0)],[Ret (Just (Mul (IdVar "y") (Const (CInt 2))))])] ["x" :#: (TInt,0),"y" :#: (TInt,0),"x" :#: (TInt,0),"f" :#: (TInt,0),"g" :#: (TInt,0),"affers" :#: (TDouble,0),"f" :#: (TDouble,0),"z" :#: (TString,0)] [Atrib "z" (Lit "abc"),Atrib "f" (Div (Mul (IdVar "x") (IdVar "y")) (Chamada "fun" [IdVar "g",IdVar "x"])),If (Rel (Rgt (IdVar "f") (Const (CInt 2)))) [Atrib "f" (Add (IdVar "f") (Const (CInt 1)))] [While (Rel (Rge (IntDouble (IdVar "y")) (Const (CDouble 0.1)))) [Atrib "f" (DoubleInt (Chamada "opa" [IdVar "z",Mul (IdVar "f") (Const (CInt 3))])),Atrib "y" (Sub (IdVar "y") (Const (CInt 1)))]],Atrib "affers" (IntDouble (Sub (Mul (Add (IdVar "f") (Div (IdVar "g") (IdVar "y"))) (Const (CInt 34))) (Mul (IdVar "x") (IdVar "f")))),Imp (IdVar "affers"),Leitura "x",Atrib "g" (DoubleInt (Mul (Chamada "fun" [IdVar "x",IdVar "y"]) (IdVar "affers")))]
+AST: Prog ["maior" :->: (["a" :#: (TDouble,0),"b" :#: (TDouble,0)],TDouble),"fat" :->: (["n" :#: (TInt,0)],TInt),"somatorio" :->: (["n" :#: (TInt,0)],TInt),"imprimir" :->: (["s" :#: (TString,0),"r" :#: (TDouble,0)],TVoid)] [("maior",["a" :#: (TDouble,0),"b" :#: (TDouble,0),"m" :#: (TInt,0)],[If (Rel (Rgt (IdVar "a") (IdVar "b"))) [Atrib "m" (DoubleInt (IdVar "a"))] [Atrib "m" (DoubleInt (IdVar "b"))],Ret (Just (DoubleInt (IdVar "m")))]),("fat",["n" :#: (TInt,0),"f" :#: (TInt,0)],[Atrib "f" (Const (CInt 0)),While (Rel (Rgt (IdVar "n") (Const (CInt 0)))) [Atrib "f" (Mul (IdVar "f") (IdVar "n")),Atrib "n" (Sub (IdVar "n") (Const (CInt 1)))],Ret (Just (IdVar "f"))]),("somatorio",["n" :#: (TInt,0),"i" :#: (TInt,0),"s" :#: (TDouble,0)],[Atrib "s" (IntDouble (Const (CInt 0))),Atrib "i" (Const (CInt 0)),While (Rel (Rle (IdVar "i") (IdVar "n"))) [Atrib "s" (Add (IdVar "s") (IntDouble (IdVar "i"))),Atrib "i" (Add (IdVar "i") (Const (CInt 1)))],Ret (Just (IntDouble (IdVar "s")))]),("imprimir",["s" :#: (TString,0),"r" :#: (TDouble,0),"s" :#: (TInt,0)],[Imp (IdVar "s"),Imp (IdVar "r"),Ret (Just (Const (CInt 0)))])] ["x" :#: (TInt,0),"num" :#: (TInt,0),"a" :#: (TDouble,0)] []

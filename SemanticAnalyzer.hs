@@ -351,9 +351,8 @@ checkProgram (Prog functionList functionBodyList mainBlockVars mainBlock) = do
   new_mainBlock <- checkBlock functionList Nothing mainBlockVars mainBlock
   pure (Prog new_functionList new_functionBodyList mainBlockVars new_mainBlock)
 
-semantics :: IO ()
-semantics = do
-  writeFile "out" ""
+compile :: IO ()
+compile = do
   -- let expr1 = Rge (IdVar "x") (Div (Const (CInt 5)) (Const (CDouble 10.5)))
   -- let expr2 = And (Rel (Rge (Const (CInt 3)) (Const (CInt 1)))) (Rel (Rdif (Const (CInt 5)) (Const (CDouble 0.5))))
   -- let expr3 = [If (Rel (Rgt (IdVar "f") (Const (CInt 2)))) [Atrib "f" (Add (IdVar "f") (Const (CInt 1)))] [Atrib "f" (Add (IdVar "f") (Const (CInt 2)))]]
@@ -365,5 +364,7 @@ semantics = do
   -- appendFile "out" (formatM $ checkBlock Nothing ["x" :#: (TInt, 0)] expr3)
   -- appendFile "out" "\n\n\n\n"
   -- appendFile "out" (formatM $ checkBlock Nothing ["f" :#: (TInt, 0)] expr4)
-  code <- readFile "AST.txt" 
-  appendFile "out" (formatM $ checkProgram $ read code)
+  file <- getLine
+  code <- readFile file 
+  writeFile "out" (formatM $ checkProgram $ makeAST code)
+  putStrLn "compile result is in file 'out'"

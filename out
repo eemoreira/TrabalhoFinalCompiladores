@@ -1,30 +1,24 @@
 Messages:
 WARNING -> Coercing double to int in:
-	Atrib "m" (IdVar "a")
+	Atrib "z" (Const (CDouble 3.14))
+
+WARNING -> Coercing int to double in:
+	Rle (Mul (IdVar "x") (IdVar "z")) (IdVar "y")
+
+WARNING -> Coercing int to double in:
+	"dudu" :->: (["x" :#: (TDouble,0),"y" :#: (TDouble,0),"z" :#: (TDouble,0)],TDouble)
+
+WARNING -> Coercing int to double in:
+	"dudu" :->: (["x" :#: (TDouble,0),"y" :#: (TDouble,0),"z" :#: (TDouble,0)],TDouble)
+
+WARNING -> Coercing int to double in:
+	"dudu" :->: (["x" :#: (TDouble,0),"y" :#: (TDouble,0),"z" :#: (TDouble,0)],TDouble)
+
+WARNING -> Coercing int to double in:
+	"opa" :->: (["x" :#: (TInt,0),"y" :#: (TDouble,0)],TString)
 
 WARNING -> Coercing double to int in:
-	Atrib "m" (IdVar "b")
-
-WARNING -> Coercing double to int in:
-	Ret (Just (IdVar "m"))
-
-WARNING -> Coercing int to double in:
-	Atrib "s" (Const (CInt 0))
-
-WARNING -> Coercing int to double in:
-	Add (IdVar "s") (IdVar "i")
-
-WARNING -> Coercing int to double in:
-	Ret (Just (IdVar "s"))
-
-ERROR -> Variable "s" :#: (TInt,0) declared multiple times in:
-	["s" :#: (TString,0),"r" :#: (TDouble,0),"s" :#: (TInt,0)]
-
-ERROR -> Variable "s" :#: (TString,0) declared multiple times in:
-	["s" :#: (TString,0),"r" :#: (TDouble,0),"s" :#: (TInt,0)]
-
-ERROR -> Unsuported types to assign in:
-	Ret (Just (Const (CInt 0)))
+	"opa" :->: (["x" :#: (TInt,0),"y" :#: (TDouble,0)],TString)
 
 
-AST: Prog ["maior" :->: (["a" :#: (TDouble,0),"b" :#: (TDouble,0)],TDouble),"fat" :->: (["n" :#: (TInt,0)],TInt),"somatorio" :->: (["n" :#: (TInt,0)],TInt),"imprimir" :->: (["s" :#: (TString,0),"r" :#: (TDouble,0)],TVoid)] [("maior",["a" :#: (TDouble,0),"b" :#: (TDouble,0),"m" :#: (TInt,0)],[If (Rel (Rgt (IdVar "a") (IdVar "b"))) [Atrib "m" (DoubleInt (IdVar "a"))] [Atrib "m" (DoubleInt (IdVar "b"))],Ret (Just (DoubleInt (IdVar "m")))]),("fat",["n" :#: (TInt,0),"f" :#: (TInt,0)],[Atrib "f" (Const (CInt 0)),While (Rel (Rgt (IdVar "n") (Const (CInt 0)))) [Atrib "f" (Mul (IdVar "f") (IdVar "n")),Atrib "n" (Sub (IdVar "n") (Const (CInt 1)))],Ret (Just (IdVar "f"))]),("somatorio",["n" :#: (TInt,0),"i" :#: (TInt,0),"s" :#: (TDouble,0)],[Atrib "s" (IntDouble (Const (CInt 0))),Atrib "i" (Const (CInt 0)),While (Rel (Rle (IdVar "i") (IdVar "n"))) [Atrib "s" (Add (IdVar "s") (IntDouble (IdVar "i"))),Atrib "i" (Add (IdVar "i") (Const (CInt 1)))],Ret (Just (IntDouble (IdVar "s")))]),("imprimir",["s" :#: (TString,0),"r" :#: (TDouble,0),"s" :#: (TInt,0)],[Imp (IdVar "s"),Imp (IdVar "r"),Ret (Just (Const (CInt 0)))])] ["x" :#: (TInt,0),"num" :#: (TInt,0),"a" :#: (TDouble,0)] []
+AST: Prog ["risa" :->: (["x" :#: (TInt,0),"y" :#: (TInt,0)],TInt),"dudu" :->: (["x" :#: (TDouble,0),"y" :#: (TDouble,0),"z" :#: (TDouble,0)],TDouble),"opa" :->: (["x" :#: (TInt,0),"y" :#: (TDouble,0)],TString)] [("risa",["x" :#: (TInt,0),"y" :#: (TInt,0)],[Ret (Just (Add (IdVar "x") (IdVar "y")))]),("dudu",["x" :#: (TDouble,0),"y" :#: (TDouble,0),"z" :#: (TDouble,0)],[Ret (Just (Add (IdVar "z") (Mul (Add (IdVar "x") (IdVar "y")) (IdVar "z"))))]),("opa",["x" :#: (TInt,0),"y" :#: (TDouble,0),"z" :#: (TInt,0)],[Atrib "z" (DoubleInt (Const (CDouble 3.14))),If (Rel (Rle (IntDouble (Mul (IdVar "x") (IdVar "z"))) (IdVar "y"))) [Ret (Just (Lit "legal"))] [],Ret (Just (Lit "chato"))])] ["x" :#: (TInt,0),"y" :#: (TInt,0)] [If (Rel (Req (Chamada "opa" [DoubleInt (Chamada "dudu" [IntDouble (IdVar "x"),IntDouble (IdVar "y"),IntDouble (Add (IdVar "x") (IdVar "y"))]),IntDouble (Chamada "risa" [IdVar "x",IdVar "y"])]) (Lit "legal"))) [Imp (Lit "eba")] [Imp (Lit "affers")]]

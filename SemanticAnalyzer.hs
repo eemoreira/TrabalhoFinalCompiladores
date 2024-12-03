@@ -14,7 +14,7 @@ emitError msg line =
 
 emitWarning :: Show a => String -> a -> M ()
 emitWarning msg line =
-  MS ("WARNING -> " ++ msg ++ " in:\n\t" ++ show line++ "\n\n", ())
+  MS ("WARNING -> " ++ msg ++ " in:\n\t" ++ show line ++ "\n\n", ())
 
 lookupVar :: Id -> [Var] -> Maybe Tipo
 lookupVar id [] = Nothing
@@ -38,31 +38,31 @@ exprTypeCheck functionList vars (IdVar id) =
     Just varType -> pure(varType, IdVar id)
     Nothing -> do 
       emitError ("variable " ++ show id ++ " not declared") (IdVar id)
-      return (TVoid, IdVar id)
+      pure (TVoid, IdVar id)
 
 exprTypeCheck functionList vars (Neg e)  = do
   (t, new_e) <- exprTypeCheck functionList vars e
   if (t == TString)
     then do
       emitError "Cannot make a string negative" e
-      return (TVoid, e)
+      pure (TVoid, e)
   else pure(t, new_e)
 
 exprTypeCheck functionList vars (IntDouble e) = do
   (t, new_e) <- exprTypeCheck functionList vars e
-  if t == TInt 
+  if t == TInt || t == TDouble
     then pure (TDouble, IntDouble new_e)
     else do
       emitError "Cannot convert non-integer to double" e
-      return (t, new_e)
+      pure (t, new_e)
 
 exprTypeCheck functionList vars (DoubleInt e) = do
   (t, new_e) <- exprTypeCheck functionList vars e
-  if t == TDouble 
+  if t == TDouble || t == TInt
     then pure (TInt, DoubleInt new_e)
     else do
       emitError "Cannot convert non-double to integer" e
-      return (t, new_e)
+      pure (t, new_e)
 
 exprTypeCheck functionList vars (Add e1 e2) = checkExpr functionList vars e1 e2 Add
 exprTypeCheck functionList vars (Sub e1 e2) = checkExpr functionList vars e1 e2 Sub
@@ -71,16 +71,16 @@ exprTypeCheck functionList vars (Div e1 e2) = checkExpr functionList vars e1 e2 
 exprTypeCheck functionList vars (Chamada id exprList) = 
   case lookupFunction id functionList of
     Just function -> do
-      let (_ :->: (_, returnType)) = function
+      let (_ :->: (_, pureType)) = function
       new_exprList <- checkFunctionCall functionList vars function function exprList
-      return (returnType, Chamada id new_exprList)
+      pure (pureType, Chamada id new_exprList)
     Nothing -> do
       emitError ("Function" ++ show id ++ " is not declared") (Chamada id exprList)
-      return (TVoid, Chamada id exprList)
+      pure (TVoid, Chamada id exprList)
 
 exprTypeCheck _ _ expr = do 
   emitError "Type checking not implemented for this expression" expr
-  return (TVoid, expr)
+  pure (TVoid, expr)
 
 checkExpr :: [Funcao] -> [Var] -> Expr -> Expr -> (Expr -> Expr -> Expr) -> M (Tipo, Expr)
 checkExpr functionList vars e1 e2 operation = do
@@ -91,21 +91,21 @@ checkExpr functionList vars e1 e2 operation = do
   case (t1, t2) of
     (TString, _) -> do 
       emitError ("Cannot operate string with " ++ show t2) op
-      return (TString, new_op)
+      pure (TString, new_op)
     (_, TString) -> do 
       emitError ("Cannot operate " ++ show t1 ++ " with string") op
-      return (TString, new_op)
+      pure (TString, new_op)
     (TInt, TInt) -> pure (TInt, new_op)
     (TDouble, TDouble) -> pure (TDouble, new_op)
     (TInt, TDouble) -> do 
       emitWarning "Coercing int to double" op
-      return (TDouble, operation (IntDouble new_e1) new_e2)
+      pure (TDouble, operation (IntDouble new_e1) new_e2)
     (TDouble, TInt) -> do
       emitWarning "Coercing int to double" op
-      return (TDouble, operation new_e1 (IntDouble new_e2))
+      pure (TDouble, operation new_e1 (IntDouble new_e2))
     _ -> do 
       emitError "Unsupported types to operate" op
-      return (TVoid, new_op)
+      pure (TVoid, new_op)
 
 exprRTypeCheck :: [Funcao] -> [Var] -> ExprR -> M ExprR
 exprRTypeCheck functionList vars (Req e1 e2)  = checkExprR functionList vars e1 e2 Req
@@ -125,21 +125,21 @@ checkExprR functionList vars e1 e2 operation = do
     (TString, TString) -> pure new_op
     (TString, _) -> do 
       emitError ("Cannot compare string with " ++ show t2) op
-      return new_op
+      pure new_op
     (_, TString) -> do
       emitError ("Cannot compare " ++ show t1 ++ " with string") op
-      return new_op
+      pure new_op
     (TInt, TInt) -> pure new_op
     (TDouble, TDouble) -> pure new_op
     (TInt, TDouble) -> do 
       emitWarning "Coercing int to double" op
-      return (operation (IntDouble new_e1) new_e2)
+      pure (operation (IntDouble new_e1) new_e2)
     (TDouble, TInt) -> do 
       emitWarning "Coercing int to double" op
-      return (operation new_e1 (IntDouble new_e2))
+      pure (operation new_e1 (IntDouble new_e2))
     _ -> do 
       emitError "Unsupported types to compare" op
-      return new_op
+      pure new_op
   
 exprLTypeCheck :: [Funcao] -> [Var] -> ExprL -> M ExprL
 exprLTypeCheck functionList vars (And e1 e2) = checkExprL functionList vars e1 e2 And
@@ -202,24 +202,24 @@ checkCommand functionList _ vars (Atrib var expr) = do
         (TString, TString) -> pure new_cmd
         (TString, _) -> do
           emitError ("Cannot assign " ++ show eType ++ " to string") cmd
-          return new_cmd
+          pure new_cmd
         (_, TString) -> do
           emitError ("Cannot assign string to " ++ show eType) cmd
-          return new_cmd
+          pure new_cmd
         (TInt, TInt) -> pure new_cmd
         (TDouble, TDouble) -> pure new_cmd
         (TInt, TDouble) -> do
           emitWarning "Coercing double to int" cmd
-          return (Atrib var (DoubleInt expr))
+          pure (Atrib var (DoubleInt new_expr))
         (TDouble, TInt) -> do
           emitWarning "Coercing int to double" cmd
-          return (Atrib var (IntDouble expr))
+          pure (Atrib var (IntDouble new_expr))
         _ -> do
           emitError "Unsuported types to assign" cmd
-          return new_cmd
+          pure new_cmd
     Nothing -> do
       emitError ("Variable " ++ show var ++ " not declared") new_cmd
-      return cmd
+      pure cmd
 
 checkCommand _ _ vars (Leitura var) = do
   let cmd = Leitura var
@@ -227,91 +227,91 @@ checkCommand _ _ vars (Leitura var) = do
     Just varType -> pure cmd
     Nothing -> do
       emitError ("Variable " ++ show var ++ " not declared") cmd
-      return cmd
+      pure cmd
 
 checkCommand functionList function vars (Ret maybeExpr) = do
-  let returnType = case function of
+  let pureType = case function of
         Just (id :->: (_, retType)) -> retType
         Nothing -> TVoid
   let cmd = Ret maybeExpr
   case maybeExpr of
     Just e -> do
       (eType, new_e) <- exprTypeCheck functionList vars e
-      case (eType, returnType) of
+      case (eType, pureType) of
         (TString, TString) -> pure (Ret (Just new_e))
         (TString, _) -> do
-          emitError (show eType ++ " does not match expected return type " ++ show returnType) cmd
-          return (Ret (Just new_e))
+          emitError (show eType ++ " does not match expected pure type " ++ show pureType) cmd
+          pure (Ret (Just new_e))
         (_, TString) -> do
-          emitError (show eType ++ " does not match expected return type " ++ show returnType) cmd
-          return (Ret (Just new_e))
+          emitError (show eType ++ " does not match expected pure type " ++ show pureType) cmd
+          pure (Ret (Just new_e))
         (TInt, TInt) -> pure (Ret (Just new_e))
         (TDouble, TDouble) -> pure (Ret (Just new_e))
         (TInt, TDouble) -> do
           emitWarning "Coercing double to int" cmd
-          return (Ret (Just (DoubleInt new_e)))
+          pure (Ret (Just (DoubleInt new_e)))
         (TDouble, TInt) -> do
           emitWarning "Coercing int to double" cmd
-          return (Ret (Just (IntDouble new_e)))
+          pure (Ret (Just (IntDouble new_e)))
         _ -> do
           emitError "Unsuported types to assign" cmd
-          return (Ret (Just new_e))
+          pure (Ret (Just new_e))
     Nothing ->
-      case returnType of
+      case pureType of
         TVoid -> pure cmd
         _ -> do
-          emitError "Non-void function expects a return expression" cmd
+          emitError "Non-void function expects a pure expression" cmd
           pure cmd
 
 checkCommand functionList function vars (Proc id exprList) =
   case lookupFunction id functionList of
     Just fun -> do
       new_exprList <- checkFunctionCall functionList vars fun fun exprList
-      return (Proc id new_exprList)
+      pure (Proc id new_exprList)
     Nothing -> do
       emitError ("Function " ++ show id ++ "not declared") (Proc id exprList)
-      return (Proc id exprList)
+      pure (Proc id exprList)
 
 checkFunctionCall :: [Funcao] -> [Var] -> Funcao -> Funcao -> [Expr] -> M [Expr]
 
 checkFunctionCall functionList vars originalFunction (_ :->: ([], _)) [] = pure []
 
 checkFunctionCall functionList vars originalFunction function exprList = do
-  let (funId :->: (functionVarList, returnType)) = function
+  let (funId :->: (functionVarList, pureType)) = function
   if length functionVarList < length exprList 
     then do
       emitError ("Too many arguments (" ++ show exprList ++ ") on functionCall") originalFunction
-      return exprList
+      pure exprList
   else if length functionVarList > length exprList
     then do
       emitError ("Too few arguments (" ++ show exprList ++ ") on functionCall") originalFunction
-      return exprList
+      pure exprList
   else do
     let (functionVar : rest) = functionVarList
     let (id :#: (varType, _mem)) = functionVar
     let (expr : exprTail) = exprList
-    let nxtFunction = funId :->: (rest, returnType)
+    let nxtFunction = funId :->: (rest, pureType)
     (eType, new_expr) <- exprTypeCheck functionList vars expr
     newTail <- checkFunctionCall functionList vars originalFunction nxtFunction exprTail
     case (varType, eType) of
       (TString, TString) -> pure (new_expr : newTail)
       (TString, _) -> do
         emitError ("Cannot coerce" ++ show eType ++ "to string") originalFunction
-        return (new_expr : newTail)
+        pure (new_expr : newTail)
       (_, TString) -> do
         emitError ("Cannot coerce string to " ++ show eType) originalFunction
-        return (new_expr : newTail)
+        pure (new_expr : newTail)
       (TInt, TInt) -> pure (new_expr : newTail)
       (TDouble, TDouble) -> pure (new_expr : newTail)
       (TInt, TDouble) -> do
         emitWarning "Coercing double to int" originalFunction
-        return (DoubleInt new_expr : newTail)
+        pure (DoubleInt new_expr : newTail)
       (TDouble, TInt) -> do
         emitWarning "Coercing int to double" originalFunction
-        return (IntDouble new_expr : newTail)
+        pure (IntDouble new_expr : newTail)
       _ -> do
         emitError "Unsuported types on functionCall" originalFunction
-        return (new_expr : newTail)
+        pure (new_expr : newTail)
 
 functionFreq :: Funcao -> [Funcao] -> Int
 functionFreq function [] = 0

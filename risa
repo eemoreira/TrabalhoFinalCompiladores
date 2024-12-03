@@ -2,19 +2,24 @@ int risa(int x, int y) {
     return x + y;
 }
 double dudu(double x, double y, double z) {
-    return z + (x + y) * z;
+    return (z + (x + y) * z);
 }
 string opa(int x, double y) {
     int z;
-    z = 3.14;
-    if (x * z < y) {
+    z = (int) 3.14;
+    if ((double) x * z < y) {
         return "legal";
     }
     return "chato";
 }
 {
     int x, y;
-    if (opa(dudu(x, y, x + y), risa(x, y)) == "legal") {
+    double z;
+    z = (double) 3;
+    read(y);
+    y = y * ((int) z) * 5;
+    x = y + 2;
+    if (opa((int)dudu((double)x, (double)y, (double) ((int) z) + y), (double)risa(x, y)) == "legal") {
         print("eba");
     } else {
         print("affers");

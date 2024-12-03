@@ -1,24 +1,18 @@
 Messages:
-WARNING -> Coercing double to int in:
-	Atrib "z" (Const (CDouble 3.14))
+WARNING -> Coercing int to double in:
+	Rgt (IdVar "a") (IdVar "b")
 
 WARNING -> Coercing int to double in:
-	Rle (Mul (IdVar "x") (IdVar "z")) (IdVar "y")
-
-WARNING -> Coercing int to double in:
-	"dudu" :->: (["x" :#: (TDouble,0),"y" :#: (TDouble,0),"z" :#: (TDouble,0)],TDouble)
-
-WARNING -> Coercing int to double in:
-	"dudu" :->: (["x" :#: (TDouble,0),"y" :#: (TDouble,0),"z" :#: (TDouble,0)],TDouble)
-
-WARNING -> Coercing int to double in:
-	"dudu" :->: (["x" :#: (TDouble,0),"y" :#: (TDouble,0),"z" :#: (TDouble,0)],TDouble)
-
-WARNING -> Coercing int to double in:
-	"opa" :->: (["x" :#: (TInt,0),"y" :#: (TDouble,0)],TString)
+	Ret (Just (IdVar "b"))
 
 WARNING -> Coercing double to int in:
-	"opa" :->: (["x" :#: (TInt,0),"y" :#: (TDouble,0)],TString)
+	Atrib "a" (Const (CDouble 10.5))
+
+WARNING -> Coercing int to double in:
+	"maior" :->: (["a" :#: (TInt,0),"b" :#: (TDouble,0)],TInt)
+
+WARNING -> Coercing int to double in:
+	Atrib "y" (Chamada "maior" [IdVar "a",IdVar "b"])
 
 
-AST: Prog ["risa" :->: (["x" :#: (TInt,0),"y" :#: (TInt,0)],TInt),"dudu" :->: (["x" :#: (TDouble,0),"y" :#: (TDouble,0),"z" :#: (TDouble,0)],TDouble),"opa" :->: (["x" :#: (TInt,0),"y" :#: (TDouble,0)],TString)] [("risa",["x" :#: (TInt,0),"y" :#: (TInt,0)],[Ret (Just (Add (IdVar "x") (IdVar "y")))]),("dudu",["x" :#: (TDouble,0),"y" :#: (TDouble,0),"z" :#: (TDouble,0)],[Ret (Just (Add (IdVar "z") (Mul (Add (IdVar "x") (IdVar "y")) (IdVar "z"))))]),("opa",["x" :#: (TInt,0),"y" :#: (TDouble,0),"z" :#: (TInt,0)],[Atrib "z" (DoubleInt (Const (CDouble 3.14))),If (Rel (Rle (IntDouble (Mul (IdVar "x") (IdVar "z"))) (IdVar "y"))) [Ret (Just (Lit "legal"))] [],Ret (Just (Lit "chato"))])] ["x" :#: (TInt,0),"y" :#: (TInt,0)] [If (Rel (Req (Chamada "opa" [DoubleInt (Chamada "dudu" [IntDouble (IdVar "x"),IntDouble (IdVar "y"),IntDouble (Add (IdVar "x") (IdVar "y"))]),IntDouble (Chamada "risa" [IdVar "x",IdVar "y"])]) (Lit "legal"))) [Imp (Lit "eba")] [Imp (Lit "affers")]]
+AST: Prog ["maior" :->: (["a" :#: (TInt,0),"b" :#: (TDouble,0)],TInt)] [("maior",["a" :#: (TInt,0),"b" :#: (TDouble,0)],[If (Rel (Rgt (IntDouble (IdVar "a")) (IdVar "b"))) [Ret (Just (IdVar "a"))] [],Ret (Just (IntDouble (IdVar "b")))])] ["a" :#: (TInt,0),"b" :#: (TInt,0),"x" :#: (TDouble,0),"y" :#: (TDouble,0)] [Atrib "a" (DoubleInt (Const (CDouble 10.5))),Atrib "x" (Const (CDouble 10.5)),Atrib "b" (Add (Mul (Const (CInt 2)) (IdVar "a")) (Mul (DoubleInt (IdVar "x")) (Const (CInt 2)))),Atrib "y" (IntDouble (Chamada "maior" [IdVar "a",IntDouble (IdVar "b")]))]

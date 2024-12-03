@@ -1,0 +1,15 @@
+int maior(int a, double b) {
+    if (a > b) {
+        return a;
+    }
+    return b;
+}
+
+{
+    int a, b;
+    double x, y;
+    a = 10.5;
+    x = 10.5;
+    b = 2 * a + ((int) x) * 2;
+    y = maior(a, b);
+}

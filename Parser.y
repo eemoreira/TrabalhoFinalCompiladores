@@ -138,7 +138,6 @@ BooleanTerm : Expr Gt Expr                     {AST.Rel (AST.Rgt $1 $3)}
 
 Expr : Expr Add Term                           {AST.Add $1 $3}
       | Expr Sub Term                          {AST.Sub $1 $3}
-      | Sub Expr                               {AST.Neg $2}
       | Term                                   {$1}
 
 Term  : Term  Mul Factor                                           {AST.Mul $1 $3}
@@ -152,6 +151,9 @@ Factor : CDouble                                                   {AST.Const (A
        | Id LPAR FunctionCallParameterList RPAR                    {AST.Chamada $1 $3}
        | Id LPAR RPAR                                              {AST.Chamada $1 []}
        | CString                                                   {AST.Lit $1}
+       | LPAR TInt RPAR Factor                                     {AST.DoubleInt $4}
+       | LPAR TDouble RPAR Factor                                  {AST.IntDouble $4}
+       | Sub Factor                                                {AST.Neg $2}
 
 {
 parseError :: [Token] -> a
